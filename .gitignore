@@ -18,6 +18,11 @@ index/
 # Local-only docs (viva submissions, not for the public repo)
 REPORT.md
 model_card.md
+GCP_DEPLOYMENT_REPORT.md
+
+# Deployment report artifacts (screenshots + LaTeX, kept local for Overleaf)
+/images/
+/report/
 
 # Debug/tool artifacts
 inspect_chunks.py
