@@ -12,11 +12,10 @@ import time
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
-from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
-
-from generate.llm_client import generate, Refusal
+from generate.llm_client import Refusal, generate
 from retrieve.retrieval import retrieve
 
 load_dotenv()

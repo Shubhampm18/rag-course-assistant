@@ -18,7 +18,6 @@ invalid citations make the result a Refusal.
 import os
 import re
 import time
-
 from dataclasses import dataclass
 
 from dotenv import load_dotenv

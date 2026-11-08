@@ -26,6 +26,16 @@ dependencies = [
 ]
 
 
+[tool.ruff]
+line-length = 120
+# Lint api/, generate/, retrieve/, ui/, tests/ only (matches CI invocation)
+include = ["api/*.py", "generate/*.py", "retrieve/*.py", "ui/*.py", "ui/pages/*.py", "tests/*.py", "ingest/*.py", "eval/*.py"]
+
+[tool.ruff.lint]
+# BLE001/S110: broad `except Exception` is intentional — graceful degradation
+# is the core resilience design (Refusal paths, empty-index fallback).
+ignore = ["BLE001", "S110"]
+
 [build-system]
 requires = ["uv_build>=0.12.10,<0.13.0"]
 build-backend = "uv_build"

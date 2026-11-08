@@ -33,7 +33,6 @@ def _embedder():
 
 def _bm25_tokens(text: str) -> list[str]:
     """Tokenise for BM25 (lowercase, strip punctuation, ignore short stopwords)."""
-    import string
     import re
     tokens = re.findall(r"[a-z0-9]+", text.lower())
     return [t for t in tokens if len(t) > 2]
@@ -52,6 +51,7 @@ def load_index(index_path: str | None = None, meta_path: str | None = None) -> i
     meta_path = meta_path or os.getenv("CHUNKS_META_PATH", "index/chunks.json")
 
     import json
+
     import faiss  # local import: only needed when an index exists
 
     try:
@@ -89,8 +89,6 @@ def retrieve(
         return []
 
     embedder = _embedder()
-    import faiss
-    import numpy as np
 
     # --- dense: embed query, FAISS search ---
     # BGE-small training format: queries prefixed "query: ", passages "passage: ".

@@ -7,7 +7,6 @@ Tests the three contractual behaviours of api/main.py:
 4. Citation validator rejects hallucinated chunk ids
 """
 
-import os
 
 # FastAPI TestClient; no real server needed
 from fastapi.testclient import TestClient
