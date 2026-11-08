@@ -3,7 +3,8 @@
     COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
     WORKDIR /app
     COPY pyproject.toml uv.lock README.md ./
-    RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev --no-install-project
+    # No --mount cache: Cloud Build's legacy builder lacks BuildKit support
+    RUN uv sync --frozen --no-dev --no-install-project
     
     # --- runtime ---
     FROM python:3.11-slim
