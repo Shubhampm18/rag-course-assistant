@@ -5,5 +5,6 @@ __pycache__
 .env
 .env.example
 index
-*.md
 .github
+# NOTE: *.md is NOT excluded — README.md is COPYed in the Dockerfile
+# (uv sync reads pyproject.toml which references it)
