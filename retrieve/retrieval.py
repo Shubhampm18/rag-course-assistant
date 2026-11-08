@@ -50,6 +50,23 @@ def load_index(index_path: str | None = None, meta_path: str | None = None) -> i
     index_path = index_path or os.getenv("FAISS_INDEX_PATH", "index/faiss.idx")
     meta_path = meta_path or os.getenv("CHUNKS_META_PATH", "index/chunks.json")
 
+    # On Cloud Run the filesystem is ephemeral: fetch the index from GCS when
+    # the local files are missing. Bucket configured via GCS_INDEX_BUCKET
+    # (default rag-index-514120); objects expected at the bucket root.
+    if not (os.path.exists(index_path) and os.path.exists(meta_path)):
+        bucket_name = os.getenv("GCS_INDEX_BUCKET", "rag-index-514120")
+        try:
+            from google.cloud import storage
+
+            client = storage.Client()
+            bucket = client.bucket(bucket_name)
+            os.makedirs(os.path.dirname(index_path) or ".", exist_ok=True)
+            os.makedirs(os.path.dirname(meta_path) or ".", exist_ok=True)
+            bucket.blob(os.path.basename(index_path)).download_to_filename(index_path)
+            bucket.blob(os.path.basename(meta_path)).download_to_filename(meta_path)
+        except Exception:
+            pass  # fall through to the normal loader, which reports 0 chunks
+
     import json
 
     import faiss  # local import: only needed when an index exists
