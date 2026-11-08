@@ -1,0 +1,29 @@
+# Secrets
+.env
+.env.local
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Generated artifacts
+index/
+
+# Private corpus (copyrighted)
+*.pdf
+
+# Local-only docs (viva submissions, not for the public repo)
+REPORT.md
+model_card.md
+
+# Debug/tool artifacts
+inspect_chunks.py
+
+src/
+
+# OS cruft
+.DS_Store
+Thumbs.db
