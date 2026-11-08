@@ -7,8 +7,10 @@
     
     # --- runtime ---
     FROM python:3.11-slim
-    # Patch base OS packages at build time (clears stock debian CVEs Trivy flags)
-    RUN apt-get update && apt-get -y upgrade && rm -rf /var/lib/apt/lists/*
+    # Patch base OS packages (debian CVEs) + pip ecosystem (wheel/jaraco.context
+    # CVE-2026-24049 / CVE-2026-23949 flagged by Trivy in the stock slim image)
+    RUN apt-get update && apt-get -y upgrade && rm -rf /var/lib/apt/lists/* \
+        && pip install --no-cache-dir --upgrade pip setuptools wheel jaraco.context
     WORKDIR /app
     COPY --from=builder /app/.venv /app/.venv
     COPY . .
