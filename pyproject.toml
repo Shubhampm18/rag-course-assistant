@@ -23,6 +23,7 @@ dependencies = [
     "sentence-transformers>=6.2.0",
     "streamlit>=1.67.0",
     "uvicorn>=0.54.0",
+    "torch>=2.0",
 ]
 
 
@@ -35,6 +36,17 @@ include = ["api/*.py", "generate/*.py", "retrieve/*.py", "ui/*.py", "ui/pages/*.
 # BLE001/S110: broad `except Exception` is intentional — graceful degradation
 # is the core resilience design (Refusal paths, empty-index fallback).
 ignore = ["BLE001", "S110"]
+
+# CPU-only torch — the embedder (BGE-small) runs on CPU by design (no GPU
+# in Cloud Run / CI). Without this, Linux torch pulls ~6GB of NVIDIA CUDA
+# packages (cublas, cudnn, triton...) and blows the GH Actions disk limit.
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 # NOTE: no [build-system] section — this is an application, not a library.
 # uv sync therefore installs only dependencies and never tries to build
