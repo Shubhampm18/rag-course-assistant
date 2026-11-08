@@ -7,6 +7,8 @@
     
     # --- runtime ---
     FROM python:3.11-slim
+    # Patch base OS packages at build time (clears stock debian CVEs Trivy flags)
+    RUN apt-get update && apt-get -y upgrade && rm -rf /var/lib/apt/lists/*
     WORKDIR /app
     COPY --from=builder /app/.venv /app/.venv
     COPY . .

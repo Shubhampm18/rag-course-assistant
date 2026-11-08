@@ -32,3 +32,7 @@ jobs:
           image-ref: rag-assistant:ci
           severity: HIGH,CRITICAL
           exit-code: 1
+          # Only fail on CVEs with an available fix — unpatched base-image
+          # (debian slim) CVEs are informational, not actionable.
+          ignore-unfixed: true
+          scanners: vuln,secret
