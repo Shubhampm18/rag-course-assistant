@@ -335,7 +335,7 @@ wheels = [
 [[package]]
 name = "cloud-endsem"
 version = "0.1.0"
-source = { editable = "." }
+source = { virtual = "." }
 dependencies = [
     { name = "faiss-cpu" },
     { name = "fastapi" },

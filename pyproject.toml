@@ -36,6 +36,7 @@ include = ["api/*.py", "generate/*.py", "retrieve/*.py", "ui/*.py", "ui/pages/*.
 # is the core resilience design (Refusal paths, empty-index fallback).
 ignore = ["BLE001", "S110"]
 
-[build-system]
-requires = ["uv_build>=0.12.10,<0.13.0"]
-build-backend = "uv_build"
+# NOTE: no [build-system] section — this is an application, not a library.
+# uv sync therefore installs only dependencies and never tries to build
+# the project itself (which would fail in CI: src/ is not committed).
+
