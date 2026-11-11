@@ -10,13 +10,23 @@ Endpoints:
 import os
 import time
 
+from pathlib import Path
+
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from starlette.concurrency import run_in_threadpool
 
 from generate.llm_client import Refusal, generate
-from retrieve.retrieval import retrieve
+from ingest.pipeline import ingest_pdf_bytes
+from retrieve.retrieval import (
+    _embedder,
+    add_documents,
+    indexed_sources,
+    persist_index,
+    retrieve,
+)
 
 load_dotenv()
 
@@ -158,3 +168,59 @@ def query(req: QueryRequest) -> QueryResponse:
         latency_ms=int((time.time() - start) * 1000),
         tokens_used=getattr(result, "tokens_used", 0),
     )
+
+
+# ---------------------------------------------------------------------------
+# Live upload — ingest a new PDF into the index without redeploying
+# ---------------------------------------------------------------------------
+MAX_UPLOAD_BYTES = 30 * 1024 * 1024  # Cloud Run caps request bodies at 32 MB
+
+
+def _ingest_and_persist(data: bytes, source_name: str) -> dict:
+    """CPU-heavy ingest + append + persist. Runs in a worker thread."""
+    result = ingest_pdf_bytes(data, source_name=source_name, model=_embedder())
+    total = add_documents(result["chunks"], result["embeddings"])
+    persisted = persist_index()
+    return {
+        "source": source_name,
+        "pages": result["pages"],
+        "chunks_added": len(result["chunks"]),
+        "total_chunks": total,
+        "persisted_to_bucket": persisted,
+    }
+
+
+@app.post("/upload")
+async def upload(file: UploadFile = File(...)) -> dict:
+    start = time.time()
+
+    data = await file.read()
+
+    # 1. Guards (fast failures with clear messages — never a 500)
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="PDF larger than 30 MB — Cloud Run request limit is 32 MB")
+    if not data.startswith(b"%PDF-"):
+        raise HTTPException(status_code=400, detail="File is not a PDF (missing %PDF- header)")
+
+    source_name = Path(file.filename or "").stem or "upload"
+    if source_name in indexed_sources():
+        raise HTTPException(status_code=409, detail=f"'{source_name}' is already indexed (re-upload under a different filename)")
+
+    # 2. Ingest in a worker thread (keeps the event loop responsive)
+    try:
+        result = await run_in_threadpool(_ingest_and_persist, data, source_name)
+    except ValueError as e:  # scanned/empty PDF from the pipeline
+        raise HTTPException(status_code=400, detail=str(e))
+
+    result["latency_ms"] = int((time.time() - start) * 1000)
+    result["message"] = f"'{source_name}' is now searchable — ask a question about it"
+    return result
+
+
+@app.get("/documents")
+def documents() -> dict:
+    """List indexed sources — viva demo aid ('what's in the corpus right now')."""
+    from retrieve.retrieval import _CHUNKS
+
+    sources = sorted(indexed_sources())
+    return {"sources": sources, "count": len(sources), "total_chunks": len(_CHUNKS)} 

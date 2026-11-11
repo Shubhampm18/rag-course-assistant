@@ -22,8 +22,10 @@ def _stub_embedder():
     import numpy as np
 
     class _Stub:
-        def encode(self, texts, convert_to_numpy=True, normalize_embeddings=True):
-            # Deterministic 384-dim vector; every query gets the same one
+        def encode(self, texts, *args, **kwargs):
+            # Deterministic 384-dim vector; every query gets the same one.
+            # *args/**kwargs absorb whatever callers pass (show_progress_bar,
+            # batch_size, ...) — real SentenceTransformer accepts them too.
             vec = np.zeros(384, dtype="float32")
             vec[0] = 1.0
             return np.tile(vec, (len(texts), 1))

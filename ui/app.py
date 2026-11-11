@@ -106,15 +106,27 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# --- Hero header ------------------------------------------------------------
+# --- Hero header (badges are LIVE — fetched from the API /documents) --------
+def _hero_badges() -> str:
+    """Fetch live corpus stats so the hero badges are always accurate."""
+    try:
+        docs = httpx.get(f"{API_URL}/documents", timeout=5).json()
+        return (
+            f'<span class="badge">⚡ GLM 5.3 Flash</span>'
+            f'<span class="badge">📖 {docs.get("total_chunks", 0):,} chunks · {docs.get("count", 0)} docs</span>'
+            f'<span class="badge">📄 live PDF upload</span>'
+            f'<span class="badge">✅ Hit@3 = 1.0</span>'
+        )
+    except Exception:
+        return '<span class="badge">● API offline</span>'
+
+
 st.markdown(
-    """
+    f"""
     <div class="hero">
         <h1>📚 RAG Assistant</h1>
-        <p>AI Engineering textbook · answers with citations · says "Not in notes" instead of hallucinating</p>
-        <span class="badge">⚡ NVIDIA GLM 5.3 Flash</span>
-        <span class="badge">📖 721 chunks</span>
-        <span class="badge">✅ Hit@3 = 1.0</span>
+        <p>Multi-document assistant · answers with citations · says "Not in notes" instead of hallucinating</p>
+        {_hero_badges()}
     </div>
     """,
     unsafe_allow_html=True,
@@ -218,6 +230,29 @@ with st.sidebar:
         choice = st.selectbox("Prior question", prior, key="reask_select")
         if st.button("Re-ask this", key="reask_btn", use_container_width=True):
             st.session_state["sample"] = choice
+
+    # --- live PDF upload --------------------------------------------------
+    st.subheader("📄 Upload PDF")
+    up = st.file_uploader("Add a document to the corpus", type=["pdf"])
+    if up is not None and st.button("Ingest this PDF", key="ingest_btn", use_container_width=True):
+        with st.spinner("Ingesting… (parse → chunk → embed)"):
+            try:
+                files = {"file": (up.name, up.getvalue(), "application/pdf")}
+                resp = httpx.post(f"{API_URL}/upload", files=files, timeout=600)
+                data = resp.json()
+            except Exception as e:
+                st.error(f"Upload failed: {e}")
+            else:
+                if resp.status_code == 200:
+                    st.success(
+                        f"✅ **{data['source']}** added — {data['pages']} pages → "
+                        f"{data['chunks_added']} chunks (corpus now {data['total_chunks']})"
+                    )
+                    st.toast("📄 Document is now searchable!")
+                elif resp.status_code == 409:
+                    st.info(data.get("detail", "Already indexed"))
+                else:
+                    st.error(data.get("detail", f"Upload failed ({resp.status_code})"))
 
 
 st.caption(

@@ -158,3 +158,76 @@ def retrieve(
 # On import, attempt to load the index. If absent (MVP state), retrieve()
 # returns [] and the API answers "Not in notes" — no crash, no LLM billing.
 load_index()
+
+
+# --- live upload support ------------------------------------------------------
+# Appends newly ingested documents to the in-memory index and persists the
+# enlarged index (local + GCS bucket). Used by api/main.py POST /upload so
+# new documents are searchable immediately and survive cold starts.
+
+def indexed_sources() -> set[str]:
+    """Set of source names already in the index (duplicate-upload check)."""
+    return {c.get("source", "") for c in _CHUNKS if c.get("source")}
+
+
+def add_documents(new_chunks: list[dict], new_embeddings) -> int:
+    """Append an ingested document to the in-memory index + metadata.
+
+    new_embeddings: numpy float32 array (n, 384) from ingest.embed.embed_chunks().
+    Returns the new total chunk count. Call persist_index() afterwards to
+    write the enlarged index to disk / GCS bucket.
+
+    NOTE: appends vectors via FAISS .add() — never re-embeds existing chunks,
+    so an upload costs only the NEW document's embedding time.
+    """
+    global _INDEX, _CHUNKS, _BM25
+    import numpy as np
+
+    if not new_chunks:
+        return len(_CHUNKS)
+
+    vecs = np.asarray(new_embeddings, dtype="float32")
+
+    if _INDEX is None:
+        # First document in an empty index (fresh deployment, no GCS files yet)
+        import faiss
+        _INDEX = faiss.IndexFlatIP(vecs.shape[1])
+
+    _INDEX.add(vecs)
+    _CHUNKS.extend(new_chunks)
+
+    from rank_bm25 import BM25Okapi
+    _BM25 = BM25Okapi([_bm25_tokens(c.get("text", "")) for c in _CHUNKS])
+    return len(_CHUNKS)
+
+
+def persist_index(index_path: str | None = None, meta_path: str | None = None) -> bool:
+    """Write faiss.idx + chunks.json locally and upload to the GCS bucket.
+
+    Bucket comes from GCS_INDEX_BUCKET (default rag-index-514120) — objects at
+    the bucket root, exactly the names load_index() downloads at cold start.
+    Returns True if the bucket upload succeeded, False if only local files
+    were written (local dev mode without GCP credentials).
+    """
+    import json
+    import faiss
+
+    index_path = index_path or os.getenv("FAISS_INDEX_PATH", "index/faiss.idx")
+    meta_path = meta_path or os.getenv("CHUNKS_META_PATH", "index/chunks.json")
+
+    os.makedirs(os.path.dirname(index_path) or ".", exist_ok=True)
+    faiss.write_index(_INDEX, index_path)
+    with open(meta_path, "w", encoding="utf-8") as f:
+        json.dump(_CHUNKS, f, indent=2, ensure_ascii=False)
+
+    bucket_name = os.getenv("GCS_INDEX_BUCKET", "rag-index-514120")
+    try:
+        from google.cloud import storage
+
+        client = storage.Client()
+        bucket = client.bucket(bucket_name)
+        bucket.blob(os.path.basename(index_path)).upload_from_filename(index_path)
+        bucket.blob(os.path.basename(meta_path)).upload_from_filename(meta_path)
+        return True
+    except Exception:
+        return False  # local-only mode (no GCP credentials) — files persist on disk

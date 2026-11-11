@@ -1,24 +1,24 @@
-"""PDF parser — extracts text + metadata from an AI textbook PDF.
+"""PDF parser — extracts text + metadata from textbook PDFs.
 
 Reads a PDF with PyMuPDF (fitz), returns a list of page dicts:
   [{page: int, text: str, has_tables: bool}]
 
-Tables are flagged via `page.find_tables()` when available; flagged pages
-get a `has_tables=True` marker so the chunker can keep table headers with
-content rows. OCR is out of MVP scope — scanned-only pages come back
-with empty text and are skipped by the chunker (caller should log a
-warning; for your viva, note them as a limitations item).
+`parse_pdf` accepts either a filesystem path (the offline CLI path) or
+raw PDF bytes (the live POST /upload path — Cloud Run has no filesystem
+to write temp uploads to, so bytes are parsed in memory).
 """
 from __future__ import annotations
-
-import os
 
 import fitz  # PyMuPDF
 
 
-def parse_pdf(path: str) -> list[dict]:
-    """Parse a PDF into per-page text records."""
-    doc = fitz.open(path)
+def parse_pdf(path_or_bytes: str | bytes) -> list[dict]:
+    """Parse a PDF (path or in-memory bytes) into per-page text records."""
+    if isinstance(path_or_bytes, (bytes, bytearray)):
+        doc = fitz.open(stream=path_or_bytes, filetype="pdf")
+    else:
+        doc = fitz.open(path_or_bytes)
+
     pages: list[dict] = []
     for page in doc:
         text = page.get_text("text").strip()
@@ -38,6 +38,6 @@ def parse_pdf(path: str) -> list[dict]:
 
 
 def parse_pdf_to_chunks(path: str) -> list[dict]:
-    """Convenience: parse + chunk a single PDF."""
+    """Convenience: parse + chunk a single PDF from a path."""
     from ingest.chunk import chunk_pages
     return chunk_pages(parse_pdf(path), source_name=os.path.basename(path))
