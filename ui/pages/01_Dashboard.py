@@ -84,16 +84,15 @@ except Exception as e:
     st.error(f"API not reachable at {API_URL}: {e}")
     st.caption("Start the API first: `uv run uvicorn api.main:app --app-dir . --port 8000`")
 
-# --- corpus stats --------------------------------------------------------
+# --- corpus stats (live, from API /documents — works on Cloud Run too) ----
 st.subheader("Corpus")
 try:
-    chunks_path = Path("index/chunks.json")
-    if chunks_path.exists():
-        chunks = json.loads(chunks_path.read_text(encoding="utf-8"))
-        st.write(f"**{len(chunks)} chunks** from the AI Engineering textbook "
-                 "(heading-aware, 500-token target, 80-token overlap, BGE-small 384-dim).")
-        st.write("Index files: `index/faiss.idx` + `index/chunks.json` (loaded at API startup).")
-    else:
-        st.warning("`index/chunks.json` not found — run `uv run python ingest/embed.py \"./AI Engineering.pdf\" --out ./index` first.")
+    docs = httpx.get(f"{API_URL}/documents", timeout=10).json()
+    sources = docs.get("sources", [])
+    total = docs.get("total_chunks", 0)
+    st.write(f"**{total} chunks** across **{docs.get('count', len(sources))} document(s)**: "
+             + ", ".join(f"`{s}`" for s in sources))
+    st.caption("Index lives in Cloud Storage (rag-index-514120), downloaded by the API at "
+               "cold start; live uploads via POST /upload append to it and persist back.")
 except Exception as e:
-    st.error(f"Could not read corpus: {e}")
+    st.warning(f"Corpus stats unavailable — API unreachable at {API_URL}: {e}")
