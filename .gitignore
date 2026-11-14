@@ -15,10 +15,9 @@ index/
 # Private corpus (copyrighted)
 *.pdf
 
-# Deployment report artifacts (screenshots + LaTeX, kept local for Overleaf)
+# Local build artifacts
 /images/
-/report/*
-!/report/docs/
+/report/
 
 # Debug/tool artifacts
 inspect_chunks.py
