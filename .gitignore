@@ -18,8 +18,6 @@ index/
 # Local build artifacts
 /images/
 /report/
-
-# Debug/tool artifacts
 inspect_chunks.py
 src/
 
