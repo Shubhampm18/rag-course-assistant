@@ -141,10 +141,10 @@ def query(req: QueryRequest) -> QueryResponse:
 
     # 3. Call the chosen LLM (Gemini / NVIDIA / auto with fallback)
     provider = req.provider or params.llm_provider
-    # Only pass a model override for NVIDIA requests — passing the NVIDIA
-    # model id (e.g. "z-ai/glm-5.3-flash") to GeminiAdapter would call
-    # Gemini with an invalid model name and fail fast (seen as an instant
-    # gemini_failed Refusal with tokens_used=0).
+    # Only pass a model override for NVIDIA requests — passing an NVIDIA
+    # model id to GeminiAdapter would call Gemini with an invalid model
+    # name and fail fast (seen as an instant gemini_failed Refusal with
+    # tokens_used=0).
     model = req.model
     if model is None and provider == "nvidia":
         model = params.nvidia_model
