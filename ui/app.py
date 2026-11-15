@@ -153,7 +153,7 @@ def _render_assistant(data: dict) -> None:
     if _is_refusal(answer):
         st.info(answer)
     else:
-        st.markdown(_highlight_citations(answer))
+        st.markdown(_highlight_citations(answer), unsafe_allow_html=True)
 
     meta = (
         f"{data.get('llm_provider')}/{data.get('llm_model')} · "
@@ -269,7 +269,7 @@ for msg in st.session_state.messages:
         if msg["role"] == "assistant":
             _render_assistant(msg["data"])
         else:
-            st.markdown(msg["content"])
+            st.markdown(msg["content"], unsafe_allow_html=True)
 
 # --- chat input (prefilled by sample button) --------------------------------
 prompt = st.chat_input("Ask about the AI textbook...", key="chat_input")
