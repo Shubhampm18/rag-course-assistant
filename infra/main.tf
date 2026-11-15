@@ -240,7 +240,7 @@ resource "google_cloudbuild_trigger" "rag_api_deploy" {
     }
   }
 
-  filename = "Dockerfile"
+  filename = "infra/cloudbuild-deploy-api.yaml"
 
   substitutions = {
     _AR_HOSTNAME   = "asia-south1-docker.pkg.dev"
@@ -266,7 +266,7 @@ resource "google_cloudbuild_trigger" "rag_ui_deploy" {
     }
   }
 
-  filename = "Dockerfile.ui"
+  filename = "infra/cloudbuild-deploy-ui.yaml"
 
   substitutions = {
     _AR_HOSTNAME   = "asia-south1-docker.pkg.dev"
