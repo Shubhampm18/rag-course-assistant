@@ -145,6 +145,7 @@ resource "google_cloud_run_service" "rag_api" {
     ignore_changes = [
       template[0].spec[0].containers[0].image,
       template[0].metadata[0].labels,
+      metadata[0].annotations, # gcloud adds client-name/client-version on deploy
       metadata[0].labels,
     ]
   }
@@ -202,6 +203,7 @@ resource "google_cloud_run_service" "rag_ui" {
     ignore_changes = [
       template[0].spec[0].containers[0].image,
       template[0].metadata[0].labels,
+      metadata[0].annotations, # gcloud adds client-name/client-version on deploy
       metadata[0].labels,
     ]
   }
@@ -230,7 +232,7 @@ resource "google_cloudbuild_trigger" "rag_api_deploy" {
   name            = "rag-api-deploy"
   location        = "global"
   description     = "Build and deploy to Cloud Run service rag-api on push to main"
-  service_account = local.runtime_sa
+  service_account = "projects/rag-course-assistant-514120/serviceAccounts/934403447461-compute@developer.gserviceaccount.com"
 
   github {
     owner = "Shubhampm18"
@@ -240,7 +242,7 @@ resource "google_cloudbuild_trigger" "rag_api_deploy" {
     }
   }
 
-  filename = "infra/cloudbuild-deploy-api.yaml"
+  filename = "/infra/cloudbuild-deploy-api.yaml"
 
   substitutions = {
     _AR_HOSTNAME   = "asia-south1-docker.pkg.dev"
@@ -256,7 +258,7 @@ resource "google_cloudbuild_trigger" "rag_ui_deploy" {
   name            = "rag-ui-deploy"
   location        = "global"
   description     = "Build and deploy to Cloud Run service rag-ui on push to main"
-  service_account = local.runtime_sa
+  service_account = "projects/rag-course-assistant-514120/serviceAccounts/934403447461-compute@developer.gserviceaccount.com"
 
   github {
     owner = "Shubhampm18"
@@ -266,7 +268,7 @@ resource "google_cloudbuild_trigger" "rag_ui_deploy" {
     }
   }
 
-  filename = "infra/cloudbuild-deploy-ui.yaml"
+  filename = "/infra/cloudbuild-deploy-ui.yaml"
 
   substitutions = {
     _AR_HOSTNAME   = "asia-south1-docker.pkg.dev"
