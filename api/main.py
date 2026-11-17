@@ -49,8 +49,11 @@ class Params:
     def __init__(self) -> None:
         self.top_k = int(os.getenv("TOP_K", "3"))
         self.temperature = float(os.getenv("TEMPERATURE", "0.2"))
-        self.relevance_threshold = float(os.getenv("RELEVANCE_THRESHOLD", "0.35"))
-        self.max_tokens = int(os.getenv("MAX_TOKENS", "512"))
+        # Calibrated via eval sweep (REPORT §19): 0.70 = the only threshold with
+        # refusal accuracy 1.0 AND hit@3 1.0 on the 12-question gold set.
+        # Mirrors .env / infra/main.tf — keep all three in sync.
+        self.relevance_threshold = float(os.getenv("RELEVANCE_THRESHOLD", "0.70"))
+        self.max_tokens = int(os.getenv("MAX_TOKENS", "768"))
         self.llm_provider = os.getenv("LLM_PROVIDER", "auto")
         self.nvidia_model = os.getenv("NVIDIA_MODEL", "z-ai/glm-5.3-flash")
 

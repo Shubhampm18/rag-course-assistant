@@ -91,7 +91,9 @@ def load_index(index_path: str | None = None, meta_path: str | None = None) -> i
 def retrieve(
     query: str,
     top_k: int = 3,
-    threshold: float = 0.35,
+    # Calibrated via eval sweep (REPORT §19): 0.70 = refusal accuracy 1.0
+    # + hit@3 1.0 on the gold set. Mirrors .env / infra/main.tf — keep in sync.
+    threshold: float = 0.70,
     dense_k: int = 20,
     bm25_k: int = 20,
     rrf_k: int = 60,

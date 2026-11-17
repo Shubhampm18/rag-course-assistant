@@ -41,3 +41,6 @@ def parse_pdf_to_chunks(path: str) -> list[dict]:
     """Convenience: parse + chunk a single PDF from a path."""
     from ingest.chunk import chunk_pages
     return chunk_pages(parse_pdf(path), source_name=os.path.basename(path))
+
+
+    

@@ -21,7 +21,8 @@ Says "Not in notes" instead of hallucinating. Deployed on GCP (Cloud Run, free-t
 2. Region: us-central1 for everything
 3. Cloud Run: --min-instances=0 --max-instances=5 (never 1 = idle charge)
 4. BigQuery: every query uses maximum_bytes_billed=10737418240 (10 GB cap)
-5. LLM token caps: MAX_TOKENS=512, TEMPERATURE=0.2, daily query cap in code
+5. LLM token caps: MAX_TOKENS=768, TEMPERATURE=0.2, daily query cap in code
+6. Retrieval threshold: RELEVANCE_THRESHOLD=0.70 (calibrated via eval sweep — see REPORT §19; never ship the uncalibrated 0.35)
 
 ## Never deploy
 - Vertex AI endpoints ($1.375/hr ~= $990/mo if left on)

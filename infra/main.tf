@@ -48,10 +48,13 @@ data "google_storage_bucket" "index" {
 
 data "google_secret_manager_secret" "nvidia_key" {
   secret_id = "NVIDIA_API_KEY"
+  version = "1"
+
 }
 
 data "google_secret_manager_secret" "google_key" {
   secret_id = "GOOGLE_API_KEY"
+  version = "1"
 }
 
 # --- rag-api (v1 knative schema — same shape the Console produces) ------------
@@ -100,6 +103,22 @@ resource "google_cloud_run_service" "rag_api" {
         env {
           name  = "GCS_INDEX_BUCKET"
           value = "rag-index-514120"
+        }
+        # Retrieval params — calibrated via eval sweep (REPORT §19): 0.70 is
+        # the only threshold with refusal accuracy 1.0 AND hit@3 1.0.
+        # Mirrors .env — keep in sync (this was missing pre-fix: the deployed
+        # service silently ran the uncalibrated 0.35, breaking refusals).
+        env {
+          name  = "TOP_K"
+          value = "3"
+        }
+        env {
+          name  = "RELEVANCE_THRESHOLD"
+          value = "0.70"
+        }
+        env {
+          name  = "TEMPERATURE"
+          value = "0.2"
         }
         env {
           name  = "LLM_PROVIDER"

@@ -45,7 +45,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="RAG retrieval eval")
     parser.add_argument("--questions", default="eval/questions.yaml")
     parser.add_argument("--top-k", type=int, default=3)
-    parser.add_argument("--threshold", type=float, default=0.35)
+    # Calibrated default (REPORT §19 sweep): 0.70 = refusal 1.0 + hit@3 1.0.
+    # Matches .env / infra/main.tf / retrieval.py — keep all in sync.
+    parser.add_argument("--threshold", type=float, default=0.70)
     args = parser.parse_args()
 
     questions = load_questions(Path(args.questions))
