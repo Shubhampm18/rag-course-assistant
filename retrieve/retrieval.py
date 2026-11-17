@@ -182,7 +182,7 @@ def add_documents(new_chunks: list[dict], new_embeddings) -> int:
     NOTE: appends vectors via FAISS .add() — never re-embeds existing chunks,
     so an upload costs only the NEW document's embedding time.
     """
-    global _INDEX, _CHUNKS, _BM25
+    global _INDEX, _BM25  # _CHUNKS is mutated in place (extend) — no rebinding
     import numpy as np
 
     if not new_chunks:
@@ -212,6 +212,7 @@ def persist_index(index_path: str | None = None, meta_path: str | None = None) -
     were written (local dev mode without GCP credentials).
     """
     import json
+
     import faiss
 
     index_path = index_path or os.getenv("FAISS_INDEX_PATH", "index/faiss.idx")

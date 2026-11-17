@@ -36,7 +36,9 @@ include = ["api/*.py", "generate/*.py", "retrieve/*.py", "ui/*.py", "ui/pages/*.
 [tool.ruff.lint]
 # BLE001/S110: broad `except Exception` is intentional — graceful degradation
 # is the core resilience design (Refusal paths, empty-index fallback).
-ignore = ["BLE001", "S110"]
+# B008: `File(...)`/`Query(...)` in argument defaults is FastAPI's own
+# dependency-injection pattern — the framework's canonical usage.
+ignore = ["BLE001", "S110", "B008"]
 
 # CPU-only torch — the embedder (BGE-small) runs on CPU by design (no GPU
 # in Cloud Run / CI). Without this, Linux torch pulls ~6GB of NVIDIA CUDA
