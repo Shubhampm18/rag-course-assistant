@@ -122,6 +122,10 @@ class NvidiaAdapter:
                     ],
                     temperature=temperature,
                     max_tokens=max_tokens,
+                    # Reasoning models (nemotron) burn the whole token budget on
+                    # hidden reasoning_content and return empty content — disable
+                    # their thinking mode so the cited answer lands in `content`.
+                    extra_body={"chat_template_kwargs": {"enable_thinking": False}},
                 )
                 tokens = 0
                 try:
