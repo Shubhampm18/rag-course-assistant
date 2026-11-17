@@ -285,7 +285,7 @@ if prompt:
         resp = httpx.post(
             f"{API_URL}/query",
             json={"question": prompt, "provider": provider, "model": model},
-            timeout=600,
+            timeout=900,  # match the API's own request timeout (NVIDIA can hang minutes)
         )
         data = resp.json()
     except Exception as e:  # network / timeout
